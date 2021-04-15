@@ -1,15 +1,30 @@
-library(shiny)
-library(shinythemes)
-library(dplyr)
-library(shinycssloaders)
-library(dqshiny)
-library(shinyBS)
-library(ggplot2)
-library(gghighlight)
-library(xts)
-library(gghighlight)
+# library(shiny)
+# library(shinythemes)
+# library(dplyr)
+# library(shinycssloaders)
+# library(dqshiny)
+# library(shinyBS)
+# library(ggplot2)
+# library(gghighlight)
+# library(xts)
 
+# Install libraries from CRAN
+load_libraries <- function(){
+  if(!require('pacman'))install.packages('pacman')
+  pacman::p_load(shiny,shinythemes, dplyr, shinycssloaders, shinyBS, ggplot2, gghighlight, xts)
+}
+
+load_libraries()
+
+# Install old library (for time input) removed by CRAN 
+install.packages(file.path('.', 'old_dependencies', 'dqshiny_0.0.4.tar.gz'), repos = NULL, type="source")
+
+library(dqshiny)
+
+# Custom functions
 source('data_engineering.R')
+
+# Set max size for file uploading to 10MB
 options(shiny.maxRequestSize = 10*1024^2)
 
 
@@ -133,12 +148,23 @@ ui <- fluidPage(
                                                    div(actionButton(align='right', 'missing_values_preview', 'Activate Preview', style='background-color: #375a7f')),
                                                    div(actionButton(align='right', "replace_missing_values", 'replace', style='background-color: #375a7f'))
                                                )
-                                           ), style = 'primary')
-                          )
+                                            )
+                                           , style = 'primary')
+                ),
+                tabPanel("Model",
+                         img(src='work_in_progress.png', height = '500px', width = '800px')
+                ),
+                tabPanel("Forecast",
+                         img(src='work_in_progress.png', height = '500px', width = '800px')
+                )
         ),width = 9
     )
   )
 )
+
+
+
+
 
 server <- function(input, output) {
 
@@ -239,6 +265,8 @@ server <- function(input, output) {
 
     if (is.null(data$current))
       showModal(modalDialog(title='No data error', 'You must insert some data before', easyClose = TRUE))
+    else if (input$frequency_method == 'cumulated')
+      showModal(modalDialog(title='Work in Progress', 'This method has not been implemented yet!', easyClose = TRUE))
     else{
 
       if (input$changed == 'frequency_apply'){

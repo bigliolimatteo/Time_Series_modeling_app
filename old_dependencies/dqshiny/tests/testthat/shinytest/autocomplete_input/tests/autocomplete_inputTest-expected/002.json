@@ -1,0 +1,15 @@
+{
+  "input": {
+    "auto1": "just",
+    "auto2": "",
+    "auto3": "",
+    "calc": 0
+  },
+  "output": {
+    "val1": "just",
+    "val2": ""
+  },
+  "export": {
+
+  }
+}
