@@ -11,7 +11,7 @@
 # Install libraries from CRAN
 load_libraries <- function(){
   if(!require('pacman'))install.packages('pacman')
-  pacman::p_load(shiny,shinythemes, dplyr, shinycssloaders, shinyBS, ggplot2, gghighlight, xts)
+  pacman::p_load(shiny,shinythemes, dplyr, shinycssloaders, shinyBS, ggplot2, gghighlight, xts, Rcpp)
 }
 
 load_libraries()
@@ -118,9 +118,9 @@ ui <- fluidPage(
                                                      div(style = "height:210px;width:100%;padding:10px 15px;background-color: #464646",
                                                           h4('Set frequency to '),
                                                           div(style='display: flex',
-                                                              div(style='width:75px;padding-right:20px', numericInput("frequency_value", label='', value = 1, min=1, step=1)),
+                                                              div(style='width:100px;padding-right:20px', numericInput("frequency_value", label='', value = 20, min=1, step=1)),
                                                               tags$head(tags$style(HTML('#frequency_value{height: 35px}'))),
-                                                              div(style='width:100px', selectInput('frequency_value_uom', label='', choices=c('sec', 'min', 'hour', 'day'))),
+                                                              div(style='width:100px', selectInput('frequency_value_uom', label='', selected='min', choices=c('sec', 'min', 'hour', 'day'))),
                                                               div(h4('using', style = 'padding-top:20px;padding-right:20px;padding-left:20px')),
                                                               div(style='width:200px', selectInput('frequency_method', label='', choices=c('interpolation', 'cumulated')))
                                                       ),

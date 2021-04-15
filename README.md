@@ -15,6 +15,11 @@ The app can be launched by installing the Shiny library on R typing in your cons
 
 Every needed library will be automatically installed and loaded in your system without any further notice (the list of the needed packages can be found in *sessionInfo.txt*).
 
+## RCpp implementations
+We developed two optimizations of the code using the RCpp libraries that can be found in the file ***data_engineering.R***.
+
+At the end of the file you can find also the microbenchmark comparisons with the corresponding R functions. 
+
 ## File Descprition
 ***data_engineering.R***: 
 Here you can find the functions that manipulate the dataset.

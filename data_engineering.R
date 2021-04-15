@@ -1,3 +1,4 @@
+
 posixtc_from_date_and_time <- function(date, time) {
   return(as.POSIXct(paste(date, time), format="%Y-%m-%d %H:%M", tz='UTC'))
 }
@@ -21,22 +22,54 @@ normalize_ts <- function(df, method= 'remove_na') {
   }
 }
 
+# C++ implementation of NumericVector diff
+cppFunction('NumericVector numeric_diff(NumericVector ts) {
+              int n = ts.size();
+              NumericVector result(n-1);
+              for(int i = 0; i < n-1; ++i) {
+                result[i] = ts[i+1]-ts[i];
+              }
+              return result;}')
+
 check_frequency <- function(df) {
 
-  diff_vector = diff(df$date)
+  diff_vector = numeric_diff(as.numeric(df$date))
   
-  units(diff_vector) = 'secs'
   if (var(as.vector(diff_vector)) == 0)
     return(diff_vector[1])
   else
     return(FALSE)
 }
 
+# C++ implementation of checking above/below threshold
+cppFunction("LogicalVector find_outliers(NumericVector values, int threshold, char method) {
+              int n = values.size();
+              LogicalVector result(n);
+              
+              if (method == 'a')
+              {
+                for(int i = 0; i < n-1; ++i) {
+                  result[i] = values[i] > threshold;
+                }
+              }
+              
+              else
+              if (method == 'b')
+              {
+                for(int i = 0; i < n-1; ++i) {
+                  result[i] = values[i] < threshold;
+                }
+              }
+              return result;}")
+
+
 select_outliers <- function(df, method, thresholds) {
   if (method == 'above')
-    df = df %>% mutate(selected = if_else(value >= thresholds[1], T, F))
+    df$selected = find_outliers(df$value, thresholds[1], 'a')
+    #df = df %>% mutate(selected = if_else(value >= thresholds[1], T, F))
   else if (method == 'below')
-    df = df %>% mutate(selected = if_else(value <= thresholds[1], T, F))
+    df$selected = find_outliers(df$value, thresholds[1], 'b')
+    #df = df %>% mutate(selected = if_else(value <= thresholds[1], T, F))
   else if (method == 'between')
     df = df %>% mutate(selected = if_else((date >= thresholds[1] & date <= thresholds[2]), T, F))
   else
@@ -85,3 +118,33 @@ replace_missing_values = function(df, method, datetime_from, datetime_to) {
   df = rbind(df, new_df, make.row.names=FALSE) %>% arrange(date)
   return(df)
 }
+
+
+
+### Here we compare speeds between functions implemented in C++ and in R
+# pacman::p_load(microbenchmark)
+# set.seed(42)
+# data = sample(1:1000, 100000, replace=TRUE)
+
+
+### numeric_diff implemented in C++ corresponds to the diff command in R
+
+#microbenchmark(diff(data), numeric_diff(data)) 
+
+###  Unit: microseconds
+###  expr                min      lq        mean       median   uq        max       neval
+###  diff(data)          1149.962 2256.184  3147.311  2321.6290 2460.372  14853.60   100
+###  numeric_diff(data)  323.691  916.004   1146.798  951.1375  1000.116  13896.93   100
+
+
+###  find_outliers implemented in C++ corresponds to the a basic command in R (c(x,y,z) > threshold)
+
+#microbenchmark(data>500, find_outliers(data, 500, 'a')) 
+
+###  Unit: microseconds
+###  expr                            min       lq          mean        median    uq          max         neval
+###  data > 500                      299.565   437.8080    444.2371    456.3585  479.2100    637.696     100
+###  find_outliers(data, 500, "a")   272.913   703.3755    1097.5726   736.1120  769.3065    14743.210   100
+
+### We notice that, while in the first case the C++ function performs 4 times better, in the second case the R function is faster,
+###  This could be due to the fact that the R function does not have overhead and can vectorize the operation
