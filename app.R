@@ -22,7 +22,10 @@ install.packages(file.path('.', 'old_dependencies', 'dqshiny_0.0.4.tar.gz'), rep
 library(dqshiny)
 
 # Custom functions
-source('data_engineering.R')
+source('scripts/data_engineering.R')
+#source('scripts/data_modeling.R')
+source('ui_components/utilities.R')
+source('ui_components/data_cleaning.R')
 
 # Set max size for file uploading to 10MB
 options(shiny.maxRequestSize = 10*1024^2)
@@ -46,128 +49,38 @@ ui <- fluidPage(
 
   sidebarLayout(
     sidebarPanel( width = 3, 
-                  tabsetPanel(type = "tabs",
-                              tabPanel("Custom", fileInput("file_input", h4("Upload custom file:"),
-                                                           accept=c('csv', 'comma-separated-values','.csv')),
-                                       h4("File Format:"),
-                                       h5("\"date\",\"value\""),
-                                       h5("2021-01-31 23:59:52,720")
-                              ),
-                              tabPanel("Default",
-                                       div(style='display: flex',
-                                           
-                                           div(style='width:70%;padding-right:20px', selectInput('default_filename', label=h4('Select default file:'),
-                                                                                                 choices=c('basic', 'medium', 'advanced'))),
-                                           div(style='width:20%;padding-top:45px', actionButton('load_default', 'Load', style='padding:6px;width:60px'))
-                                       )
-                              )
-                  ),
+                  upload_file_panel,
                   hr(),
-                  downloadButton(outputId='download', label='Download current data')
+                  downloadButton(outputId='download', label='Download current data'),
+                  hr(style = "margin: 30px -20px 20px;border-top: 10px solid #222222;"),
+                  current_info_panel
     ),
-    
     mainPanel(
-    tabsetPanel(type = "tabs",
-                  tabPanel("Data Cleaning",
-                           br(),
-                           div(style='display: flex;',
-                               div(actionButton("data_cleaning_home_button", '', icon = icon("home"), style='padding:5px;height:35px')),
-                               div(style='padding-left:15px', dateRangeInput('data_cleaning_date_range', label = NULL))
-                           ),
-                           plotOutput(outputId = 'data_cleaning_plot', height = '30vh') %>% withSpinner(color="#0dc5c1"),
-                           hr(),
-                           bsCollapsePanel('Manage outliers',
-                                           fluidRow(
-                                             column(5,
-                                                    div(style = "height:230px;width:100%;padding:10px 15px;background-color: #464646",
-                                                      h3('By value'),
-                                                      div(style='display: flex',
-                                                        div(style='width:150px;padding-right:10px', selectInput('below_above_outliers', label='', choices=c('above', 'below'))),
-                                                        div(style='width:80px', numericInput("outliers_value", label='', value = 1)),
-                                                        tags$head(tags$style(HTML('#outliers_value{height: 35px}')))
-                                                      ),
-                                                      div(style='display: flex; justify-content: flex-end;padding-top:25px',
-                                                        actionButton(align='right', 'highlight_outliers_value', 'highlight', style='background-color: #32bc8c'),
-                                                        actionButton(align='right', "remove_outliers_value", 'remove', style='background-color: #32bc8c')))),
-    
-                                             column(7,
-                                                     div(style = "height:230px;width:100%;padding:10px 15px;background-color: #464646",
-                                                            h3('By date range'),
-                                                            div(style='display: flex',
-                                                              div(h4('From', style = 'padding-top:20px;padding-right:20px')),
-                                                              div(style='width:115px;padding-right:5px', dateInput("outliers_date_from", label='')),
-                                                              div(time_input("outliers_time_from", '', value='00:00', width='125px')),
-                                                              div(h4('To', style = 'padding-top:20px;padding-right:20px;padding-left:20px')),
-                                                              div(style='width:115px;padding-right:5px', dateInput("outliers_date_to", label='')),
-                                                              div(time_input("outliers_time_to", '', value='00:00', width='125px'))
-                                                            ),
-                                                         div(style='display: flex; justify-content: flex-end;padding-top:20px',
-                                                              actionButton(align='right', 'highlight_outliers_date_range', 'highlight', style='background-color: #32bc8c'),
-                                                              actionButton(align='right', 'remove_outliers_date_range', 'remove', style='background-color: #32bc8c')
-                                                            )
-                                                         )
-                                                    )
-                                           ), style = 'success'),
-                           bsCollapsePanel('Manage sampling frequency',
-                                           fluidRow(
-                                             column(5,
-                                                div(style = "height:210px;width:100%;padding:10px 15px;background-color: #464646",
-                                                    div(style = 'width:20', actionButton('compure_current_sampling_frequency', 'Compute Current',
-                                                                                         style='background-color: #3498db')),
-                                                    div(style = 'width:70%;margin:0 auto;padding-top:50px', textOutput("current_sampling_frequency"))),
-                                                    tags$head(tags$style("#current_sampling_frequency{color:#3498db;font-size:20px;text-align:center}"))
-                                              ),
-                                              column(7,
-                                                     div(style = "height:210px;width:100%;padding:10px 15px;background-color: #464646",
-                                                          h4('Set frequency to '),
-                                                          div(style='display: flex',
-                                                              div(style='width:100px;padding-right:20px', numericInput("frequency_value", label='', value = 20, min=1, step=1)),
-                                                              tags$head(tags$style(HTML('#frequency_value{height: 35px}'))),
-                                                              div(style='width:100px', selectInput('frequency_value_uom', label='', selected='min', choices=c('min', 'hour', 'day'))),
-                                                              div(h4('using', style = 'padding-top:20px;padding-right:20px;padding-left:20px')),
-                                                              div(style='width:200px', selectInput('frequency_method', label='', choices=c('interpolation', 'cumulated')))
-                                                      ),
-                                                      div(style='display: flex; justify-content: flex-end;padding-top:25px',
-                                                          actionButton(align='right', 'frequency_preview', 'Activate Preview', style='background-color: #3498db'),
-                                                          actionButton(align='right', 'frequency_apply', 'Apply', style='background-color: #3498db')
-                                                      )
-                                                     )
-                                              )
-                                            )
-                                           , style = 'info'),
-                           bsCollapsePanel('Manage missing values',
-                                           div(style = "height:180px;width:100%;padding:10px 15px;background-color: #464646",
-                                               div(style='display: flex',
-                                                   div(h4('Replace values from', style = 'padding-top:20px;padding-right:15px;padding-left:20px')),
-                                                   div(style='width:115px;padding-right:5px', dateInput("missing_values_date_from", label='')),
-                                                   div(time_input("missing_values_time_from", '', value='00:00', width='140px')),
-                                                   div(h4('to', style = 'padding-top:20px;padding-right:10px;padding-left:10px')),
-                                                   div(style='width:115px;padding-right:5px', dateInput("missing_values_date_to", label='')),
-                                                   div(time_input("missing_values_time_to", '', value='00:00', width='140px')),
-                                                   div(h4('with', style = 'padding-top:20px;padding-right:10px;padding-left:10px')),
-                                                   div(style='width:150px;padding-top:5px',selectInput('missing_values_method', label='', choices=c('Day before', 'Day after', 'Week before', 'Week after')))
-                                               ),
-                                               div(style='display: flex; justify-content: flex-end;padding-top:25px',
-                                                   div(actionButton(align='right', 'missing_values_preview', 'Activate Preview', style='background-color: #375a7f')),
-                                                   div(actionButton(align='right', "replace_missing_values", 'replace', style='background-color: #375a7f'))
-                                               )
-                                            )
-                                           , style = 'primary')
+    div(style='display: flex;',
+        div(actionButton("data_cleaning_home_button", '', icon = icon("home"), style='padding:5px;height:35px')),
+        div(style='padding-left:15px', dateRangeInput('data_cleaning_date_range', label = NULL))
+    ),
+    plotOutput(outputId = 'data_cleaning_plot', height = '30vh') %>% withSpinner(color="#0dc5c1"),
+    hr(),
+    wellPanel(
+      #style = "background-color: #A9A9A9;", 
+      tabsetPanel(type = "tabs",
+                  #selected = 'Model', # TODO remove, used for debug only
+                  tabPanel("Clean", br(),
+                           manage_outliers_panel,
+                           manage_sampling_frequency_panel,
+                           manage_missing_values_panel
                 ),
-                tabPanel("Model",
-                         img(src='work_in_progress.png', height = '500px', width = '800px')
+                tabPanel("Model", br(), 
+                         img(src='work_in_progress.png', height = '250px', width = '400px')
                 ),
-                tabPanel("Forecast",
-                         img(src='work_in_progress.png', height = '500px', width = '800px')
+                tabPanel("Forecast", br(),
+                         img(src='work_in_progress.png', height = '250px', width = '400px')
                 )
-        ),width = 9
+              )
+        ),width = 9)
     )
-  )
 )
-
-
-
-
 
 server <- function(input, output) {
 
