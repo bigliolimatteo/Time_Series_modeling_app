@@ -1,3 +1,4 @@
+library(zoo)
 
 posixtc_from_date_and_time <- function(date, time) {
   return(as.POSIXct(paste(date, time), format="%Y-%m-%d %H:%M", tz='UTC'))
@@ -94,6 +95,34 @@ update_frequency <- function(df, frequency_value, frequency_uom, method) {
         mutate(value = approx(value, n = n())$y, selected=T) %>%
         #filter(as.numeric(format(date, data_format)) == 0) %>%
         #filter(!duplicated(format(date, '%Y-%m-%d %H:%M:%S'))) %>%
+        filter(date %in% aux_df$date) %>%
+        select(date, value, selected)
+    )}
+  else if (method == 'cumulated'){
+    aux_df = data.frame(date = seq(from = align.time(min(df$date), n=seconds_rounding), to = align.time(max(df$date), n=seconds_rounding), 
+                                   by = paste(frequency_value, frequency_uom)))
+    
+    full_df = data.frame(date = seq(from = align.time(min(df$date), n=seconds_rounding), to = align.time(max(df$date), n=seconds_rounding), 
+                                   by = paste(60, 'sec')))
+
+    rolling_mean_window_length = frequency_value * switch(frequency_uom, "min" = 1, "hour" = 60, "day" = 24*60) 
+
+    return(
+      df %>%
+        mutate(time_diff = c(0, diff(as.numeric(date)))) %>%
+        mutate(value_in_time = value*time_diff/3600) %>%
+        mutate(cumulated = cumsum(value_in_time)) %>%
+        mutate(original_ts=as.numeric(date)) %>%
+        full_join(full_df) %>%
+        mutate(final_ts= as.numeric(date)) %>%
+        arrange(date) %>%
+        mutate(cumulated_interp = approx(x=original_ts[!is.na(original_ts)], 
+                                         y=cumulated[!is.na(cumulated)], 
+                                         xout=final_ts)$y, selected=T) %>%
+        filter(date %in% full_df$date) %>%
+        mutate(cumulated_interp_diff = c(0, diff(cumulated_interp))) %>%
+        mutate(value_final = cumulated_interp_diff*60) %>%
+        mutate(value=rollapply(value_final,rolling_mean_window_length,mean,align='center',fill=NA)) %>%
         filter(date %in% aux_df$date) %>%
         select(date, value, selected)
     )}
