@@ -8,6 +8,8 @@
 # library(gghighlight)
 # library(xts)
 
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+
 # Install libraries from CRAN
 load_libraries <- function(){
   if(!require('pacman'))install.packages('pacman')
@@ -22,10 +24,11 @@ install.packages(file.path('.', 'old_dependencies', 'dqshiny_0.0.4.tar.gz'), rep
 library(dqshiny)
 
 # Custom functions
-source('scripts/data_engineering.R')
-#source('scripts/data_modeling.R')
+source('scripts/data_cleaning.R')
+source('scripts/data_modeling.R')
 source('ui_components/utilities.R')
 source('ui_components/data_cleaning.R')
+source('ui_components/data_modeling.R')
 
 # Set max size for file uploading to 10MB
 options(shiny.maxRequestSize = 10*1024^2)
@@ -65,13 +68,14 @@ ui <- fluidPage(
     wellPanel(
       #style = "background-color: #A9A9A9;", 
       tabsetPanel(type = "tabs",
-                  #selected = 'Model', # TODO remove, used for debug only
+                  selected = 'Clean', # TODO remove, used for debug only
                   tabPanel("Clean", br(),
                            manage_outliers_panel,
                            manage_sampling_frequency_panel,
                            manage_missing_values_panel
                 ),
-                tabPanel("Model", br(), 
+                tabPanel("Model", br(),
+                         manage_fourier_elements_panel,
                          img(src='work_in_progress.png', height = '250px', width = '400px')
                 ),
                 tabPanel("Forecast", br(),
@@ -281,6 +285,22 @@ server <- function(input, output) {
       annotate("text", x = 4, y = 25, size=20, label = "Insert data to visualize plot") +
       theme_void()
     }
+  })
+  
+  # Manage plot
+  output$sample_fourier_plot <- renderPlot({
+    ggplot() +
+    {if(input$fourier_element_show == 'sin')
+      geom_line( data = data.frame( index = 1:50, value = fourier_element(50, input$fourier_element_period, input$fourier_element_armonic)[,1]),
+                 aes(x = index, y= value))} +
+    {if(input$fourier_element_show == 'cos')
+      geom_line( data = data.frame( index = 1:50, value = fourier_element(50, input$fourier_element_period, input$fourier_element_armonic)[,2]),
+                 aes(x = index, y= value))} +
+    {if (input$fourier_element_show == 'sum')
+      geom_line( data = data.frame( index = 1:50, value = fourier_element(50, input$fourier_element_period, input$fourier_element_armonic)[,1]+
+                                                          fourier_element(50, input$fourier_element_period, input$fourier_element_armonic)[,2]),
+                   aes(x = index, y= value))} +
+      theme_void()
   })
 
 # Download current data

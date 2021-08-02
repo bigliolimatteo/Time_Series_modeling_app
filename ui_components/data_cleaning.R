@@ -2,31 +2,31 @@
 #                          Manage outliers components                          #
 ################################################################################
 
-manage_outliers_by_value_div = div(style = "height:230px;width:100%;padding:10px 15px;background-color: #464646",
+manage_outliers_by_value_div = div(style = "padding:3%;background-color: #464646",
                                    h3('By value'),
                                    div(style='display: flex',
-                                       div(style='width:150px;padding-right:10px', selectInput('below_above_outliers', label='', choices=c('above', 'below'))),
-                                       div(style='width:80px', numericInput("outliers_value", label='', value = 1)),
-                                       tags$head(tags$style(HTML('#outliers_value{height: 35px}')))
+                                       div(style='width:60%;padding-right:3%', selectInput('below_above_outliers', label='', choices=c('above', 'below'))),
+                                       div(style='width:30%', numericInput("outliers_value", label='', value = 1)),
+                                       tags$head(tags$style(HTML('#outliers_value{height: 3%}')))
                                    ),
-                                   div(style='display: flex; justify-content: flex-end;padding-top:25px',
+                                   div(style='display: flex; justify-content: flex-end;padding-top:3%',
                                        actionButton(align='right', 'highlight_outliers_value', 'highlight', style='background-color: #32bc8c'),
                                        actionButton(align='right', "remove_outliers_value", 'remove', style='background-color: #32bc8c')
                                    )
                                )
 
 
-manage_outliers_by_date_div = div(style = "height:230px;width:100%;padding:10px 15px;background-color: #464646",
+manage_outliers_by_date_div = div(style = "padding:3%;background-color: #464646",
                                   h3('By date range'),
                                   div(style='display: flex',
-                                      div(h4('From', style = 'padding-top:20px;padding-right:20px')),
-                                      div(style='width:115px;padding-right:5px', dateInput("outliers_date_from", label='')),
-                                      div(time_input("outliers_time_from", '', value='00:00', width='125px')),
-                                      div(h4('To', style = 'padding-top:20px;padding-right:20px;padding-left:20px')),
-                                      div(style='width:115px;padding-right:5px', dateInput("outliers_date_to", label='')),
-                                      div(time_input("outliers_time_to", '', value='00:00', width='125px'))
+                                      div(h5('From', style = 'padding-top:25px;padding-right:5px')),
+                                      div(style='width:200px;padding-right:5px', dateInput("outliers_date_from", label='')),
+                                      div(time_input("outliers_time_from", '', value='00:00', width='80%')),
+                                      div(h5('To', style = 'padding-top:25px;padding-right:5px;padding-left:5px')),
+                                      div(style='width:250px;padding-right:5px', dateInput("outliers_date_to", label='')),
+                                      div(time_input("outliers_time_to", '', value='00:00', width='80%'))
                                   ),
-                                  div(style='display: flex; justify-content: flex-end;padding-top:20px',
+                                  div(style='display: flex; justify-content: flex-end;padding-top:3%',
                                       actionButton(align='right', 'highlight_outliers_date_range', 'highlight', style='background-color: #32bc8c'),
                                       actionButton(align='right', 'remove_outliers_date_range', 'remove', style='background-color: #32bc8c')
                                   )
